@@ -12,9 +12,8 @@ async def check_task():
     await a.login('', '')
     await a.find_button_2_click('登入')
     await a.find_button_2_click('我要打卡')
-    # await a.find_button_2_click('上班')
+    await a.find_button_2_click('上班')
     await a.wait_check_in_done()
-    await asyncio.sleep(10)
 
 
 async def main():
@@ -30,9 +29,12 @@ async def main():
     aio_sch.start()
 
 
-if __name__ == '__main__':
-    # asyncio.run(main())
-
+def args():
     loop = asyncio.get_event_loop()
     asyncio.ensure_future(main())
     loop.run_forever()
+
+
+if __name__ == '__main__':
+    # asyncio.run(main())
+    args()

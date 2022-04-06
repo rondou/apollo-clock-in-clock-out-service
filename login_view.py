@@ -3,6 +3,8 @@ import asyncio
 from apolloxe import ApolloXeApi
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
+from apscheduler.events import JobExecutionEvent
 
 
 async def check_task():
@@ -13,16 +15,29 @@ async def check_task():
     await a.find_button_2_click('登入')
     await a.find_button_2_click('我要打卡')
     await a.find_button_2_click('上班')
-    await a.wait_check_in_done()
+    return await a.wait_check_in_done()
+
+
+def job_listener(event):
+    if isinstance(event, JobExecutionEvent):
+        print(event.retval)
+        print(event.job_id)
+        if event.retval:
+            print('Success')
+        else:
+            print('Fails')
 
 
 async def main():
     print('Prepare scheduler')
     aio_sch = AsyncIOScheduler(timezone='Asia/Taipei')
+    aio_sch.add_listener(job_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
 
     # aio_sch.add_job(check_task, 'cron', hour=13, minute=49)
     # aio_sch.add_job(check_task, 'interval', seconds=10)
-    aio_sch.add_job(check_task, CronTrigger.from_crontab('30 08 * * *'))
+    # aio_sch.add_job(check_task, CronTrigger.from_crontab('30 08 * * 3-5'))
+    aio_sch.add_job(check_task, 'cron', day_of_week='wed-fri', hour=8, minute=30)
+    # aio_sch.add_job(check_task, 'cron', day_of_week='thu-fri', hour=8, minute=30)
     print(aio_sch.state)
     print(aio_sch.get_jobs())
 

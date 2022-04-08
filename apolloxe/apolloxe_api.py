@@ -7,18 +7,27 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from datetime import datetime
+from typing import Optional
 
 import asyncio
 import concurrent.futures
 
 
 class ApolloXeApi:
-    def __init__(self) -> None:
-        self.chrome_driver = webdriver.Chrome(executable_path=ChromeDriverManager().install())
-        self.loop = asyncio.get_running_loop()
+    def __init__(self, loop: Optional[asyncio.AbstractEventLoop] = None) -> None:
+        self.chrome_driver = None
+        self.loop = loop if loop else asyncio.get_running_loop()
+
+    async def init_driver(self):
+        chrome_driver = await self.loop.run_in_executor(None, ChromeDriverManager)
+        excutable_path = await self.loop.run_in_executor(None, chrome_driver.install)
+        self.chrome_driver = await self.loop.run_in_executor(None, webdriver.Chrome, excutable_path)
+
+    async def destroy_driver(self):
+        await self.loop.run_in_executor(None, self.chrome_driver.close)
 
     async def get_view(self, url):
-        await self.loop.run_in_executor(None, self.chrome_driver.get, url),
+        await self.loop.run_in_executor(None, self.chrome_driver.get, url)
 
     async def login(self, username: str, password: str, time_out: int = 20):
         wait = WebDriverWait(self.chrome_driver, timeout=time_out)

@@ -7,46 +7,57 @@ from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 from apscheduler.events import JobExecutionEvent
 
 
-async def check_task():
-    print('Check task start')
-    a = ApolloXeApi()
-    await a.get_view("")
-    await a.login('', '')
-    await a.find_button_2_click('登入')
-    await a.find_button_2_click('我要打卡')
-    await a.find_button_2_click('上班')
-    return await a.wait_check_in_done()
+class PunchKeeper:
+    def __init__(self, loop = None) -> None:
+        self.loop = loop if loop else asyncio.get_running_loop()
+        self.apollo_api = ApolloXeApi(self.loop)
+        self.aio_sch = AsyncIOScheduler(timezone='Asia/Taipei')
 
+    async def check_task(self):
+        print('Check task start')
+        await self.apollo_api.init_driver()
 
-def job_listener(event):
-    if isinstance(event, JobExecutionEvent):
-        print(event.retval)
-        print(event.job_id)
-        if event.retval:
-            print('Success')
-        else:
-            print('Fails')
+        await self.apollo_api.get_view('')
+        await self.apollo_api.login('', '')
+        await self.apollo_api.find_button_2_click('登入')
+        await self.apollo_api.find_button_2_click('我要打卡')
+        await self.apollo_api.find_button_2_click('上班')
+        result: bool = await self.apollo_api.wait_check_in_done()
 
+        await self.apollo_api.destroy_driver()
+        return result
 
-async def main():
-    print('Prepare scheduler')
-    aio_sch = AsyncIOScheduler(timezone='Asia/Taipei')
-    aio_sch.add_listener(job_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
+    def job_listener(self, event):
+        if isinstance(event, JobExecutionEvent):
+            print(event.retval)
+            print(event.job_id)
+            if event.retval:
+                print('Success')
+            else:
+                print('Fails')
 
-    # aio_sch.add_job(check_task, 'cron', hour=13, minute=49)
-    # aio_sch.add_job(check_task, 'interval', seconds=10)
-    # aio_sch.add_job(check_task, CronTrigger.from_crontab('30 08 * * 3-5'))
-    aio_sch.add_job(check_task, 'cron', day_of_week='wed-fri', hour=8, minute=30)
-    # aio_sch.add_job(check_task, 'cron', day_of_week='thu-fri', hour=8, minute=30)
-    print(aio_sch.state)
-    print(aio_sch.get_jobs())
+    async def run(self):
+        print('Prepare scheduler')
+        self.aio_sch.add_listener(self.job_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
 
-    aio_sch.start()
+        # aio_sch.add_job(check_task, 'cron', hour=13, minute=49)
+        # aio_sch.add_job(check_task, 'interval', seconds=10)
+        # aio_sch.add_job(check_task, CronTrigger.from_crontab('30 08 * * 3-5'))
+        # self.aio_sch.add_job(self.check_task, 'cron', day_of_week='tue-fri', hour=16, minute=7)
+        # aio_sch.add_job(check_task, 'cron', day_of_week='wed-fri', hour=8, minute=33)
+        # aio_sch.add_job(check_task, 'cron', day_of_week='thu-fri', hour=8, minute=30)
+        self.aio_sch.add_job(self.check_task, 'cron', day_of_week='tue-fri', hour=8, minute=35)
+        print(self.aio_sch.state)
+        print(self.aio_sch.get_jobs())
+
+        self.aio_sch.start()
 
 
 def args():
     loop = asyncio.get_event_loop()
-    asyncio.ensure_future(main())
+
+    p = PunchKeeper(loop=loop)
+    asyncio.ensure_future(p.run())
     loop.run_forever()
 
 

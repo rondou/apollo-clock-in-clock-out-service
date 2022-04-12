@@ -1,4 +1,6 @@
 import asyncio
+import concurrent
+import time
 
 from apolloxe import ApolloXeApi
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -22,13 +24,12 @@ class PunchKeeper:
         await self.apollo_api.find_button_2_click('登入')
         await self.apollo_api.find_button_2_click('我要打卡')
         await self.apollo_api.find_button_2_click('上班')
-        result: bool = await self.apollo_api.wait_check_in_done()
-
-        await self.apollo_api.destroy_driver()
-        return result
+        return await self.apollo_api.wait_check_in_done()
 
     def job_listener(self, event):
         if isinstance(event, JobExecutionEvent):
+            asyncio.run_coroutine_threadsafe(self.apollo_api.destroy_driver(), self.loop)
+
             print(event.retval)
             print(event.job_id)
             if event.retval:

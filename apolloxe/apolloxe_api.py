@@ -6,8 +6,9 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from datetime import datetime
-from typing import Optional
+from datetime import date, datetime, timedelta
+from typing import Optional, Tuple
+from random import randrange
 
 import asyncio
 import re
@@ -78,7 +79,7 @@ class ApolloXeApi:
 
         return result
 
-    async def get_check_out_time(self) -> datetime:
+    async def get_check_in_time(self) -> datetime:
         wait = WebDriverWait(self.chrome_driver, timeout=20)
         button = wait.until(EC.element_to_be_clickable((By.XPATH, f'//button[contains(@class, \'btn new-window-title-button\')]')))
         button.click()
@@ -91,3 +92,20 @@ class ApolloXeApi:
 
         m = re.match(r'^[0-9]{2}:[0-9]{2}(?=\/)', check_in.text)
         return datetime.strptime(m.group(0), '%H:%M')
+
+    def random_punch_out_time_with_checkin(self, checkin: datetime) -> Tuple[int, int]:
+        punch_out: datetime = datetime(year=1900, month=1, day=1, hour=checkin.hour + 9, minute=checkin.minute)
+
+        available_time = datetime(year=1900, month=1, day=1, hour=9, minute=30) - checkin
+        if available_time < timedelta(minutes=0):
+            available_time = timedelta(seconds=0)
+            # return punch_out.hour, punch_out.minute
+        elif available_time > timedelta(minutes=60):
+            available_time = timedelta(minutes=60)
+            punch_out: datetime = datetime(year=1900, month=1, day=1, hour=17, minute=30)
+
+        stop = int(available_time.total_seconds() / 60) + 1
+        minute = randrange(0, stop)
+
+        punch_out += timedelta(minutes=minute)
+        return punch_out.hour, punch_out.minute

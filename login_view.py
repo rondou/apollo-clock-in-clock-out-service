@@ -39,7 +39,7 @@ class PunchKeeper:
         await self.apollo_api.login('', '')
         await self.apollo_api.find_button_2_click('登入')
         await self.apollo_api.find_button_2_click('我要打卡')
-        return await self.apollo_api.get_check_out_time()
+        return await self.apollo_api.get_check_in_time()
 
     def job_listener(self, event):
         if isinstance(event, JobExecutionEvent):
@@ -50,7 +50,7 @@ class PunchKeeper:
                 print(f'The check in time is {event.retval}')
                 check_out_time: datetime = event.retval
 
-                hour, minute = check_out_time.hour + 9, check_out_time.minute
+                hour, minute = self.random_punch_out_time_with_checkin(check_out_time)
                 print(f'so the punch out time is {hour} : {minute}')
 
                 self.check_out_job.reschedule('cron', day_of_week='mon-fri', hour=hour, minute=minute)

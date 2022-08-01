@@ -50,7 +50,7 @@ class PunchKeeper:
                 print(f'The check in time is {event.retval}')
                 check_out_time: datetime = event.retval
 
-                hour, minute = self.random_punch_out_time_with_checkin(check_out_time)
+                hour, minute = self.apollo_api.random_punch_out_time_with_checkin(check_out_time)
                 print(f'so the punch out time is {hour} : {minute}')
 
                 self.check_out_job.reschedule('cron', day_of_week='mon-fri', hour=hour, minute=minute)

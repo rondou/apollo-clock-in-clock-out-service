@@ -3,6 +3,10 @@ name = "apolloxe"
 version = "0.1.0"
 description = ""
 authors = ["Rondou Chen <40and44sis@gmail.com>"]
+packages = [
+    { include = "login_view.py" },
+    { include = "apolloxe" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"

@@ -49,12 +49,12 @@ class PunchKeeper:
             if event.job_id == self.dump_check_out_time_job.id:
                 print(f'The check in time is {event.retval}')
                 check_out_time: datetime = event.retval
+                if check_out_time:
+                    hour, minute = self.apollo_api.random_punch_out_time_with_checkin(check_out_time)
+                    print(f'so the punch out time is {hour} : {minute}')
 
-                hour, minute = self.apollo_api.random_punch_out_time_with_checkin(check_out_time)
-                print(f'so the punch out time is {hour} : {minute}')
-
-                self.check_out_job.reschedule('cron', day_of_week='mon-fri', hour=hour, minute=minute)
-                self.check_out_job.resume()
+                    self.check_out_job.reschedule('cron', day_of_week='mon-fri', hour=hour, minute=minute)
+                    self.check_out_job.resume()
 
             if event.job_id == self.check_out_job.id:
                 self.check_out_job.pause()
@@ -77,7 +77,7 @@ class PunchKeeper:
         # aio_sch.add_job(check_task, 'cron', day_of_week='thu-fri', hour=8, minute=30)
         # self.aio_sch.add_job(self.check_task, 'cron', day_of_week='tue-fri', hour=8, minute=30)
 
-        self.dump_check_out_time_job = self.aio_sch.add_job(self.dump_check_out_time_task, 'cron', day_of_week='mon-fri', hour=17, minute=27)
+        self.dump_check_out_time_job = self.aio_sch.add_job(self.dump_check_out_time_task, 'cron', day_of_week='mon-fri', hour=17, minute=34)
         print(self.aio_sch.state)
 
         # self.check_out_job = self.aio_sch.add_job(self.check_task, 'cron', day_of_week='mon-fri', hour=16, minute=45)

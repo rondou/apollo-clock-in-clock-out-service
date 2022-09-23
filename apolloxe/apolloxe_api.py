@@ -87,11 +87,19 @@ class ApolloXeApi:
 
         n: str = datetime.now().strftime('%Y/%m/%d')
         xpath_string = f'//div[contains(@class, \'ta-scrollbar_wrapper ta_grid_table\')]//td[text()=\'{n}\']/following-sibling::td'
-        check_in = wait.until(EC.visibility_of_element_located((By.XPATH, xpath_string)))
-        print(check_in.text)
 
-        m = re.match(r'^[0-9]{2}:[0-9]{2}(?=\/)', check_in.text)
-        return datetime.strptime(m.group(0), '%H:%M')
+        result: datetime = None
+        try:
+            check_in = wait.until(EC.visibility_of_element_located((By.XPATH, xpath_string)))
+            print(check_in.text)
+
+            m = re.match(r'^[0-9]{2}:[0-9]{2}(?=\/)', check_in.text)
+            result = datetime.strptime(m.group(0), '%H:%M')
+        except TimeoutException as e:
+            print("Get Time Error")
+            result = None
+
+        return result
 
     def random_punch_out_time_with_checkin(self, checkin: datetime) -> Tuple[int, int]:
         punch_out: datetime = datetime(year=1900, month=1, day=1, hour=checkin.hour + 9, minute=checkin.minute)
@@ -99,6 +107,7 @@ class ApolloXeApi:
         available_time = datetime(year=1900, month=1, day=1, hour=9, minute=30) - checkin
         if available_time < timedelta(minutes=0):
             available_time = timedelta(seconds=0)
+            punch_out: datetime = datetime(year=1900, month=1, day=1, hour=18, minute=30)
             # return punch_out.hour, punch_out.minute
         elif available_time > timedelta(minutes=60):
             available_time = timedelta(minutes=60)
@@ -109,3 +118,11 @@ class ApolloXeApi:
 
         punch_out += timedelta(minutes=minute)
         return punch_out.hour, punch_out.minute
+
+    """
+    TODO: rando punch in times
+    """
+    async def random_punch_in_time(self) -> datetime:
+        hour = randrange(8, 9)
+        minute = randrange(30, 60) if hour == 8 else randrange(0, 31)
+        return datetime(hour=hour, minute=minute)
